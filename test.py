@@ -22,3 +22,7 @@
 # maxlen=10
 # sentence=[0,1,2,3,4,5]
 # print(sentence+[0]*(maxlen-len(sentence)))
+a=[0,0,2]
+b=[112,4,6]
+a.extend(b)
+print (a)

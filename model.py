@@ -3,6 +3,7 @@ from  util import  sort_by_lengths,bert_tokenizer_tensor
 import torch
 import torch.nn as nn
 from neuralNet import BertClassifier
+from neuralNet import BiRNNClassifier
 from config import Trainconfig
 
 class BertClassifierModel(object):
@@ -11,7 +12,8 @@ class BertClassifierModel(object):
         self.lr=Trainconfig.lr
         self.device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.epoches = Trainconfig.epoch
-        self.model=BertClassifier(labelNum)
+        # self.model=BertClassifier(labelNum)
+        self.model=BiRNNClassifier(labelNum)
         self.model.to(self.device)
         self.lossfun=nn.CrossEntropyLoss()
         self.printstep=Trainconfig.printstep
@@ -61,8 +63,11 @@ class BertClassifierModel(object):
                 targets = torch.argmax(targets, dim=1)
                 scores = self.model(tensorized_sents, mask,tokentypeid)
                 # 计算损失
-                loss = self.lossfun(scores, targets).to(self.device)
-                val_losses += loss.item()
+                # loss = self.lossfun(scores, targets).to(self.device)
+                # val_losses += loss.item()
+                _,scores=torch.max(scores,dim=1)
+                acc=scores.data.eq(targets).sum()
+                val_losses+=acc
             val_loss = val_losses / val_step
             if val_loss < self._best_val_loss:
                 print("保存模型...")
@@ -71,17 +76,32 @@ class BertClassifierModel(object):
             return val_loss
     def test(self,word_lists, tag_lists, tag2id):
         # word_lists, tag_lists, indices = sort_by_lengths(word_lists, tag_lists)
-        tensorized_sents, mask,tokenid = bert_tokenizer_tensor(word_lists)
-        tensorized_sents = tensorized_sents.to(self.device)
-        mask=mask.to(self.device)
-        tokenid=tokenid.to(self.device)
+        # tensorized_sents, mask,tokenid = bert_tokenizer_tensor(word_lists)
+        # tensorized_sents = tensorized_sents.to(self.device)
+        # mask=mask.to(self.device)
+        # tokenid=tokenid.to(self.device)
+        tag_lists=torch.tensor(tag_lists)
         self.best_model.eval()
+        predtags=[]
         with torch.no_grad():
-            batch_tagids = self.best_model(
-                tensorized_sents,mask,tokenid)
-            batch_tagids1 = torch.argmax(batch_tagids,dim=1)
+            val_step = 0
+            for ind in range(0, len(word_lists), self.batchsize):
+                val_step += 1
+                # 准备batch数据
+                batch_sents = word_lists[ind:ind + self.batchsize]
+                tensorized_sents, mask,tokentypeid = bert_tokenizer_tensor(batch_sents)
+                tensorized_sents = tensorized_sents.to(self.device)
+                mask = mask.to(self.device)
+                tokentypeid=tokentypeid.to(self.device)
+                batchtags = self.best_model(tensorized_sents, mask,tokentypeid)
+                _, batch_tagids1 = torch.max(batchtags.data, 1)
+                predtags.extend(batch_tagids1.tolist())
+            # batch_tagids = nn.Softmax(batch_tagids)
+            # batch_tagids1= [max(enumerate(sublist), key=lambda x: x[1])[0] for sublist in batch_tagids]
+
+            # batch_tagids1.data.eq
         # 将id转化为标注
-        return batch_tagids1.tolist()
+        return predtags,torch.argmax(tag_lists,dim=1).tolist()
         # pred_tag_lists = []
         # id2tag = dict((id_, tag) for tag, id_ in tag2id.items())
         # for i, ids in enumerate(batch_tagids1):
@@ -135,6 +155,19 @@ class BertClassifierModel(object):
         return loss.item()
 
 
+
+class BertClassifier2(object):
+    #拼接方式
+    def __int__(self,labelNum):
+        pass
+    def trainstep(self):
+        pass
+    def train(self):
+        pass
+    def eval(self):
+        pass
+    def test(self):
+        pass
 class TemplateModel(object):
     def __int__(self,labelNum):
         pass

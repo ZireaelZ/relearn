@@ -154,5 +154,59 @@ def readJson(jsonpaths,relpath):
                     rellist.append(relation)
     return sentencelist,rellist,reldict
 
+def readJson2(jsonpaths,relpath):
+    #初始化句子列表，关系列表，关系词典
+    #使用
+    sentencelist=[]
+    rellist=[]
+    reldict={}
+    #读取关系词典
+    with open(relpath,'r',encoding='utf-8') as f:
+        for line in f.readlines():
+            reldict[line.split(' ')[0]]=line.strip().split(' ')[1]
+    for jsonpath in jsonpaths:
+        with open(jsonpath, encoding='utf-8') as f:
+            for line in f.readlines():
+                ajson = json.loads(line)
+                for label in ajson['relations']:
+                    first=ajson['entities'][str(label['subject'])]['start']
+                    second=ajson['entities'][str(label['object'])]['start']
+                    first,second=(first,second) if first<second else (second,first)
+                    # sentence=ajson['text'].strip()+ajson['entities'][str(label['subject'])]['content']+ajson['entities'][str(label['object'])]['content']
+                    sentence=ajson['text'].strip()
+                    sentence=sentence[:first]+'α'+sentence[first:second]+'β'+sentence[second:]
+                    relation=[0 for i in range(len(reldict.keys()))]
+                    relation[int(reldict[label['relation']])]=1
+                    sentencelist.append(sentence)
+                    rellist.append(relation)
+    return sentencelist,rellist,reldict
+
+def readJson3(jsonpaths,relpath):
+    #返回的句子列表是一个json格式文件
+    #初始化句子列表，关系列表，关系词典
+    #使用
+    sentencelist=[]
+    rellist=[]
+    reldict={}
+    #读取关系词典
+    with open(relpath,'r',encoding='utf-8') as f:
+        for line in f.readlines():
+            reldict[line.split(' ')[0]]=line.strip().split(' ')[1]
+    for jsonpath in jsonpaths:
+        with open(jsonpath, encoding='utf-8') as f:
+            for line in f.readlines():
+                ajson = json.loads(line)
+                for label in ajson['relations']:
+                    first=ajson['entities'][str(label['subject'])]
+                    second=ajson['entities'][str(label['object'])]
+                    # first,second=(first,second) if first<second else (second,first)
+                    # sentence=ajson['text'].strip()+ajson['entities'][str(label['subject'])]['content']+ajson['entities'][str(label['object'])]['content']
+                    # sentence={'text':ajson['text'],'subject':ajson['entities'][str(label['subject'])],'object':ajson['entities'][str(label['subject'])]}
+                    sentence=sentence[:first]+'α'+sentence[first:second]+'β'+sentence[second:]
+                    relation=[0 for i in range(len(reldict.keys()))]
+                    relation[int(reldict[label['relation']])]=1
+                    sentencelist.append(sentence)
+                    rellist.append(relation)
+    return sentencelist,rellist,reldict
 
 

@@ -5,6 +5,11 @@ import torch.nn.functional as F
 from transformers import BertTokenizer
 bertpath="./bertModels/bert_pretrained"
 
+def getKeyByvalue(dict,value):
+    for key, val in dict.items():
+        if val == str(value):
+            return key
+    return None
 def word2features(sent, i):
     """抽取单个字的特征"""
     word = sent[i]
@@ -50,12 +55,12 @@ def tensorized(batch, maps):
 #将输入的句子转换为mask token 和
 def bert_tokenizer_tensor(batch):
     tokenizer = BertTokenizer.from_pretrained(bertpath)
-    train_word_lists=['在这个例子中，首先加载模型，然后构建分类器。接着型和分类器组合起来，形成一个完整的模型。然后定义优化器，使用优化器对整个模型的参数进行微调。在训练过程中，模型的所有参数都会参与更新']
+    # train_word_lists=['在这个例子中，首先加载模型，然后构建分类器。接着型和分类器组合起来，形成一个完整的模型。然后定义优化器，使用优化器对整个模型的参数进行微调。在训练过程中，模型的所有参数都会参与更新']
     tokenized_texts = [tokenizer(sent) for sent in batch]
     batchout=[]
     maskout=[]
     tokentypeout=[]
-    maxlen=max([len(i) for i in batch])+2
+    maxlen=max([len(i['input_ids']) for i in tokenized_texts])+2
     for tokenized_text in tokenized_texts:
         sentence=tokenized_text['input_ids']
         tokentypeid=tokenized_text['token_type_ids']
